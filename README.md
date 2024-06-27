@@ -1,5 +1,4 @@
-# Reinforcement Learning Environments for Surgical Robotics Challenge
-A Fine-grained Platform for Data Collection and Benchmarking in Surgical Policy Learning.
+# A Fine-grained Platform for Data Collection and Benchmarking in Surgical Policy Learning
 
 ## Prerequiste
 This section introduces the necessary configuration you need.
