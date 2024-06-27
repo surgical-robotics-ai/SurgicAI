@@ -94,3 +94,14 @@ The following video demonstrates the complete suturing procedure by our training
 
 [demo](https://github.com/surgical-robotics-ai/SurgicAI/assets/147576462/1927a1cf-096f-444d-a878-6c0f96b152d4)
 
+If you find our work userful, please cite it as:
+```bibtex
+@misc{wu2024surgicaifinegrainedplatformdata,
+      title={SurgicAI: A Fine-grained Platform for Data Collection and Benchmarking in Surgical Policy Learning}, 
+      author={Jin Wu and Haoying Zhou and Peter Kazanzides and Adnan Munawar and Anqi Liu},
+      year={2024},
+      eprint={2406.13865},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO},
+      url={https://arxiv.org/abs/2406.13865}, 
+}
