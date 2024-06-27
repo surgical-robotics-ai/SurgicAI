@@ -54,15 +54,14 @@ from Approach_env import SRC_approach
 import numpy as np
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_checker import check_env
-from RL_algo.td3_BC import TD3_BC
-from RL_algo.DemoHerReplayBuffer import DemoHerReplayBuffer
+from RL_algo.PPO import PPO
 from stable_baselines3.common.utils import set_random_seed
 gym.envs.register(id="TD3_HER_BC", entry_point=SRC_approach)
 env = gym.make("TD3_HER_BC", render_mode="human",reward_type = "sparse")
 ```
 
 ### Initialize and Train the Model
-Here is an example of model with Proximal Policy Optimization (PPO) algorithm.
+Here is an example of model with Proximal Policy Optimization (PPO) algorithm (set with default hyperparameters).
 ```python
 model = PPO("MlpPolicy", env, verbose=1,tensorboard_log="./First_version/",)
 checkpoint_callback = CheckpointCallback(save_freq=10000, save_path='./First_version/Model_temp', name_prefix='SRC')
