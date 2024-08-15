@@ -15,7 +15,6 @@ from stable_baselines3.td3.policies import Actor, CnnPolicy, MlpPolicy, MultiInp
 
 SelfTD3 = TypeVar("SelfTD3", bound="TD3_BC")
 
-
 class TD3_BC(OffPolicyAlgorithm):
     
     policy_aliases: ClassVar[Dict[str, Type[BasePolicy]]] = {
@@ -116,7 +115,6 @@ class TD3_BC(OffPolicyAlgorithm):
         q_demo = critic.q1_forward(obs, demo_actions)
         return q_demo > q_actor
 
-
     def _setup_model(self) -> None:
         super()._setup_model()
         self._create_aliases()
@@ -142,33 +140,38 @@ class TD3_BC(OffPolicyAlgorithm):
         actor_losses, critic_losses = [], []
         for _ in range(gradient_steps):
             self._n_updates += 1
-            # Sample replay buffer
-            # replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)  # type: ignore[union-attr]
-            replay_data = self.replay_buffer.sample(int((1-self.demo_ratio)*batch_size), env=self._vec_normalize_env)
+            
+            # 修改: 添加对 demo_ratio 的检查
+            if self.demo_ratio < 1.0:
+                replay_data = self.replay_buffer.sample(int((1-self.demo_ratio)*batch_size), env=self._vec_normalize_env)
+            else:
+                replay_data = None
 
-            with th.no_grad():
-                # Select action according to policy and add clipped noise
-                noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
-                noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
-                next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
+            # 修改: 只有在有回放数据时才执行这部分代码
+            if replay_data is not None:
+                with th.no_grad():
+                    # Select action according to policy and add clipped noise
+                    noise = replay_data.actions.clone().data.normal_(0, self.target_policy_noise)
+                    noise = noise.clamp(-self.target_noise_clip, self.target_noise_clip)
+                    next_actions = (self.actor_target(replay_data.next_observations) + noise).clamp(-1, 1)
 
-                # Compute the next Q-values: min over all critics targets
-                next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
-                next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
-                target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
+                    # Compute the next Q-values: min over all critics targets
+                    next_q_values = th.cat(self.critic_target(replay_data.next_observations, next_actions), dim=1)
+                    next_q_values, _ = th.min(next_q_values, dim=1, keepdim=True)
+                    target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
-            # Get current Q-values estimates for each critic network
-            current_q_values = self.critic(replay_data.observations, replay_data.actions)
+                # Get current Q-values estimates for each critic network
+                current_q_values = self.critic(replay_data.observations, replay_data.actions)
 
-            # Compute critic loss
-            critic_loss = sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
-            assert isinstance(critic_loss, th.Tensor)
-            critic_losses.append(critic_loss.item())
+                # Compute critic loss
+                critic_loss = sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
+                assert isinstance(critic_loss, th.Tensor)
+                critic_losses.append(critic_loss.item())
 
-            # Optimize the critics
-            self.critic.optimizer.zero_grad()
-            critic_loss.backward()
-            self.critic.optimizer.step()
+                # Optimize the critics
+                self.critic.optimizer.zero_grad()
+                critic_loss.backward()
+                self.critic.optimizer.step()
 
             ##### Begin editting
             demo_batch_size = int(self.demo_ratio*batch_size)
@@ -183,7 +186,11 @@ class TD3_BC(OffPolicyAlgorithm):
 
                 if not self.Q_filter:
                     bc_loss = F.mse_loss(predicted_actions, demo_actions)           
-                    rl_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+                    # 修改: 只在有回放数据时计算 rl_loss
+                    if replay_data is not None:
+                        rl_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+                    else:
+                        rl_loss = th.tensor(0.0, device=self.device)
                     actor_loss = self.BC_coeff*bc_loss+(1-self.BC_coeff)*rl_loss
                 
                 else:
@@ -191,11 +198,13 @@ class TD3_BC(OffPolicyAlgorithm):
                     if q_filter_mask.any():
                         bc_loss = F.mse_loss(predicted_actions[q_filter_mask], demo_actions[q_filter_mask])
                     else:
-                        bc_loss = th.tensor(0.0) 
-                    rl_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+                        bc_loss = th.tensor(0.0, device=self.device) 
+                    # 修改: 只在有回放数据时计算 rl_loss
+                    if replay_data is not None:
+                        rl_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
+                    else:
+                        rl_loss = th.tensor(0.0, device=self.device)
                     actor_loss = self.BC_coeff*bc_loss+(1-self.BC_coeff)*rl_loss
-                # # Compute actor loss
-                # actor_loss = -self.critic.q1_forward(replay_data.observations, self.actor(replay_data.observations)).mean()
                 
                 actor_losses.append(actor_loss.item())
 

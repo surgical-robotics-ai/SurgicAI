@@ -7,16 +7,6 @@ import time
 import re
 
 from PyKDL import Frame, Rotation, Vector
-from gym.spaces.box import Box
-from surgical_robotics_challenge.psm_arm import PSM
-from surgical_robotics_challenge.ecm_arm import ECM
-from surgical_robotics_challenge.scene import Scene
-from surgical_robotics_challenge.simulation_manager import SimulationManager
-from surgical_robotics_challenge.task_completion_report import TaskCompletionReport
-from surgical_robotics_challenge.utils.task3_init import NeedleInitialization
-from surgical_robotics_challenge.evaluation.evaluation import Task_2_Evaluation, Task_2_Evaluation_Report
-from utils.observation import Observation
-from utils.needle_kinematics_v2 import NeedleKinematics_v2
 from evaluation import *
 from surgical_robotics_challenge.kinematics.psmFK import *
 from subtask_env import SRC_subtask
@@ -35,19 +25,23 @@ class SRC_approach(SRC_subtask):
         self.psm2.actuators[0].deactuate()
         self.needle_randomization()
         ######################
-        low_limits = [-0.02, -0.02, -0.01, -np.deg2rad(30), -np.deg2rad(30), -np.deg2rad(30), -0.1]
-        high_limits = [0.02, 0.02, 0.01, np.deg2rad(30), np.deg2rad(30), np.deg2rad(30), 0.1]
-        random_array = np.random.uniform(low=low_limits, high=high_limits)
-        self.psm_goal_list[self.psm_idx-1] = self.init_psm2+random_array
+        # low_limits = [-0.02, -0.02, -0.01, -np.deg2rad(30), -np.deg2rad(30), -np.deg2rad(30), -0.1]
+        # high_limits = [0.02, 0.02, 0.01, np.deg2rad(30), np.deg2rad(30), np.deg2rad(30), 0.1]
+        # random_array = np.random.uniform(low=low_limits, high=high_limits)
+        # self.psm_goal_list[self.psm_idx-1] = self.init_psm2+random_array
+        self.min_angle = 5
+        self.max_angle = 20
+        self.grasp_angle = np.random.uniform(self.min_angle, self.max_angle)
 
-        # self.psm_goal_list[self.psm_idx-1] = self.init_psm2
+        self.psm_goal_list[self.psm_idx-1] = np.copy(self.init_psm2)
         self.psm_step(self.psm_goal_list[self.psm_idx-1],self.psm_idx)
         self.world_handle.reset()
         self.Camera_view_reset()
         time.sleep(0.5)
 
-        self.needle_obs = self.needle_goal_evaluator(0.010)
+        self.needle_obs = self.needle_goal_evaluator(0.007)
         self.goal_obs = self.needle_obs
+        self.multigoal_obs = self.needle_multigoal_evaluator(lift_height=0.007,start_degree=self.min_angle,end_degree=self.max_angle)
         self.init_obs_array = np.concatenate((self.psm_goal_list[self.psm_idx-1],self.goal_obs,self.goal_obs-self.psm_goal_list[self.psm_idx-1]),dtype=np.float32)
         self.init_obs_dict = {"observation":self.init_obs_array,"achieved_goal":self.psm_goal_list[self.psm_idx-1],"desired_goal":self.goal_obs}
 
@@ -59,20 +53,24 @@ class SRC_approach(SRC_subtask):
         
         return self.obs, self.info
     
+    def step(self, action):
+        self.needle_obs = self.needle_goal_evaluator(lift_height=0.007,deg_angle=self.grasp_angle)
+        self.multigoal_obs = self.needle_multigoal_evaluator(lift_height=0.007,start_degree=self.min_angle,end_degree=self.max_angle)
+        self.goal_obs = self.needle_obs
+        return super(SRC_approach, self).step(action)
+
     def Manual_reset(self,init_obs,init_needle):
         self.psm2.actuators[0].deactuate()
         """ Reset the state of the environment to an initial state """
 
         self.needle.needle.set_pose(init_needle)
-        ######################
-
         self.psm_goal_list[self.psm_idx-1] = init_obs
         self.psm_step(self.psm_goal_list[self.psm_idx-1],2)
         self.world_handle.reset()
         self.Camera_view_reset()
         time.sleep(0.5)
 
-        self.needle_obs = self.needle_goal_evaluator(0.010)
+        self.needle_obs = self.needle_goal_evaluator(0.007)
         self.init_obs_array = np.concatenate((self.init_psm2,self.needle_obs,self.needle_obs-self.init_psm2),dtype=np.float32)
         self.init_obs_dict = {"observation":self.init_obs_array,"achieved_goal":self.init_psm2,"desired_goal":self.needle_obs}
 
@@ -83,20 +81,34 @@ class SRC_approach(SRC_subtask):
         self.timestep = 0
         return self.obs, self.info
 
+
     def criteria(self):
-        """
-        Decide whether success criteria (Distance is lower than a threshold) is met.
-        """
         achieved_goal = self.obs["achieved_goal"]
-        desired_goal = self.obs["desired_goal"]
-        distances_trans = np.linalg.norm(achieved_goal[0:3] - desired_goal[0:3])
-        distances_angle = np.linalg.norm(achieved_goal[3:6] - desired_goal[3:6])
-        jaw_angle = self.obs["achieved_goal"][-1]
-        if (distances_trans<= self.threshold_trans) and (distances_angle <= self.threshold_angle and jaw_angle<=0.1):
-            return True
-        else:
-            return False
 
+        min_trans = np.Inf
+        min_angle = np.Inf
+        
+        for idx, desired_goal in enumerate(self.multigoal_obs):
+            desired_goal = desired_goal*np.array([100,100,100,1,1,1,1])
+            distances_trans = np.linalg.norm(achieved_goal[:3] - desired_goal[:3])
+            distances_angle = np.linalg.norm(achieved_goal[3:6] - desired_goal[3:6])
+            
+            if min_trans > distances_trans:
+                min_trans = distances_trans
+            if min_angle > distances_angle:
+                min_angle = distances_angle
 
+            if distances_trans <= self.threshold_trans and distances_angle <= self.threshold_angle and self.jaw_angle_list[self.psm_idx-1] <= 0.1:
+                print(f"Matched degree is {self.needle_kin.start_degree + idx * (self.needle_kin.end_degree - self.needle_kin.start_degree) / self.needle_kin.num_points}, distance_trans = {distances_trans}, distances_angle = {np.degrees(distances_angle)}")
+                print("Attach the needle to the gripper")
+                self.psm2.actuators[0].actuate("Needle")
+                self.needle.needle.set_force([0.0,0.0,0.0])
+                self.needle.needle.set_torque([0.0,0.0,0.0])
+                return True
+            
+        self.min_trans = min_trans
+        self.min_angle = min_angle    
+        # print(f"min trans = {min_trans} cm, min_angle = {np.degrees(min_angle)} deg")
+        return False
  
 

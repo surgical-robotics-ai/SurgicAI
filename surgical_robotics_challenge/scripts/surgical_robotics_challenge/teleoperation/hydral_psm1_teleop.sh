@@ -1,1 +1,0 @@
-python3 hydra_multi_psm_control.py -c hydra_l_sim_teleop --one True --two False
