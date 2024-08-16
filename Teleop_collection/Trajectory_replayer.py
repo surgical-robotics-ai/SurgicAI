@@ -4,11 +4,11 @@ import sys
 from glob import glob
 import rosbag
 import gc
-# from surgical_robotics_challenge.utils.task3_init import NeedleInitialization
 from surgical_robotics_challenge.psm_arm import PSM
 from surgical_robotics_challenge.ecm_arm import ECM
 import PyKDL
 from surgical_robotics_challenge.simulation_manager import SimulationManager
+from Data_preprocessor import data_processing
 dynamic_path = os.path.abspath(__file__ + "/../../")
 sys.path.append(dynamic_path)
 
@@ -40,7 +40,6 @@ if __name__ == '__main__':
     ecm_pos = []
     needle_pos = []
 
-    ### new bag replay
     for topic, msg, t in bag.read_messages(topics=topics[11]):
         assert topic == "/ambf/env/Needle/State", "load incorrect topics for needle state"
         pose_msg = msg.pose
@@ -57,14 +56,11 @@ if __name__ == '__main__':
             pose_msg.position.z/10.
         )
         )
-        # break
-        needle_pos.append(needle_pos_temp)
-    #############################
 
-    ### new bag replay
+        needle_pos.append(needle_pos_temp)
+
     for topic, msg, t in bag.read_messages(topics=topics[14]):
         assert topic == "/ambf/env/psm1/baselink/State", "load incorrect topics for psm 1 jp"
-        # psm1_pos_temp = msg.joint_positions[0:6]
         psm1_pos_temp = [msg.joint_positions[0],
                          msg.joint_positions[1],
                          msg.joint_positions[2] / 10.,
@@ -84,10 +80,8 @@ if __name__ == '__main__':
     print("psm 1 jaw record count: ", count)
     count = 0
 
-    # for topic, msg, t in bag.read_messages(topics=topics[15]):
     for topic, msg, t in bag.read_messages(topics=topics[16]):
         assert topic == "/ambf/env/psm2/baselink/State", "load incorrect topics for psm 2 jp"
-        # psm1_pos_temp = msg.joint_positions[0:6]
         psm2_pos_temp = [msg.joint_positions[0],
                     msg.joint_positions[1],
                     msg.joint_positions[2] / 10.,
@@ -128,7 +122,6 @@ if __name__ == '__main__':
     for i in range(total_num):
         cam.servo_jp(ecm_pos[i])
         psm1.servo_jp(psm1_pos[i])
-        # psm1.set_jaw_angle(psm1_jaw[i] - 0.1)
         psm1.set_jaw_angle(psm1_jaw[i])
         psm2.servo_jp(psm2_pos[i])
         psm2.set_jaw_angle(psm2_jaw[i])
@@ -136,3 +129,8 @@ if __name__ == '__main__':
         count += 1
         sys.stdout.write(f"\r Run Progress: {count} / {total_num}")
         sys.stdout.flush()
+
+
+    # T_w_b = psm1.get_T_w_b()
+    T_w_b = psm2.get_T_w_b()
+    trajectory_stage = data_processing(psm1_pos, psm2_pos, psm1_jaw, psm2_jaw, needle_pos,T_w_b)

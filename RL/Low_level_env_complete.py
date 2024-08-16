@@ -10,12 +10,8 @@ from surgical_robotics_challenge.psm_arm import PSM
 from surgical_robotics_challenge.ecm_arm import ECM
 from surgical_robotics_challenge.scene import Scene
 from surgical_robotics_challenge.simulation_manager import SimulationManager
-from surgical_robotics_challenge.task_completion_report import TaskCompletionReport
 from surgical_robotics_challenge.utils.task3_init import NeedleInitialization
-from surgical_robotics_challenge.evaluation.evaluation import Task_2_Evaluation, Task_2_Evaluation_Report
-from utils.observation import Observation
-from utils.needle_kinematics_v2 import NeedleKinematics_v2
-from evaluation import *
+from utils.needle_kinematics_old import NeedleKinematics_v2
 from surgical_robotics_challenge.kinematics.psmFK import *
 
 

@@ -4,7 +4,7 @@ import numpy as np
 import gymnasium as gym
 import importlib
 from stable_baselines3.common.utils import set_random_seed
-from algorithm_configs import get_algorithm_config
+from algorithm_configs_online import get_algorithm_config
 import gc
 import torch
 

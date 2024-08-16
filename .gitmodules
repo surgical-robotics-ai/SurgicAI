@@ -1,6 +1,6 @@
 [submodule "surgical_robotics_challenge_old"]
 	path = surgical_robotics_challenge_old
-	url = git@github.com:surgical-robotics-ai/surgical_robotics_challenge.git
+	url = git@github.com:JinnWu686/surgical_robotics_challenge.git
 [submodule "surgical_robotics_challenge_new"]
 	path = surgical_robotics_challenge_new
 	url = git@github.com:surgical-robotics-ai/surgical_robotics_challenge.git

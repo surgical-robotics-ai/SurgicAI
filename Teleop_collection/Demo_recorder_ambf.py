@@ -1,3 +1,5 @@
+# This code enables collecting sychronized image and kinematics data
+
 import os
 import rospy
 from sensor_msgs.msg import Image, JointState

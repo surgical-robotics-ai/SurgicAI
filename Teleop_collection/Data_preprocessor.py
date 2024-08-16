@@ -42,7 +42,7 @@ def filter_actions(obs_array, max_action_diff, max_removals=100):
 
     return np.array(filtered_obs)
 
-def data_processing(psm1_pos, psm2_pos, psm1_jaw, psm2_jaw, needle_pose,task_idx, T_w_b=None):
+def data_processing(psm1_pos, psm2_pos, psm1_jaw, psm2_jaw, needle_pose, task_idx,T_w_b=None):
     for i in range(len(psm1_jaw)):
         if psm1_jaw[i] < 0:
             psm1_jaw[i] = 0
@@ -70,7 +70,7 @@ def data_processing(psm1_pos, psm2_pos, psm1_jaw, psm2_jaw, needle_pose,task_idx
         needle_world = Frame2obs(needle_pose[i]*T_bmINn)
 
 
-        obs_array_temp = np.concatenate((psm1_obs_temp,psm2_obs_temp,needle_obs,needle_world,np.array([task_idx])))
+        obs_array_temp = np.concatenate((psm1_obs_temp,psm2_obs_temp,needle_obs,needle_world,task_idx))
         obs_array.append(obs_array_temp)
         
     max_action_diff = np.array([0.0005, 0.0005, 0.0005, np.deg2rad(2), np.deg2rad(2), np.deg2rad(2)])
