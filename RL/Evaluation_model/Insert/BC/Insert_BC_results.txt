@@ -1,0 +1,10 @@
+Task: Insert
+Algorithm: BC
+Reward Type: /
+Number of seeds: 5
+Evaluation seed: 42
+
+Results:
+Success Rate: 0.97 ± 0.02
+Average Trajectory Length: 42.43 ± 2.51 mm
+Average Time Cost: 89.80 ± 3.98 steps

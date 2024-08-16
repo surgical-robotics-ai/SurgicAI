@@ -1,0 +1,10 @@
+Task: Pullout
+Algorithm: TD3_HER_BC
+Reward Type: sparse
+Number of seeds: 5
+Evaluation seed: 42
+
+Results:
+Success Rate: 1.00 ± 0.00
+Average Trajectory Length: 41.88 ± 2.49 mm
+Average Time Cost: 88.20 ± 4.93 steps

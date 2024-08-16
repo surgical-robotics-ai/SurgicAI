@@ -1,0 +1,9 @@
+Task: Place
+Algorithm: IQL
+Reward Type: dense
+Evaluation seed: 1
+
+Results:
+Success Rate: 0.91 ± 0.09
+Average Trajectory Length: 67.28 ± 11.52 mm
+Average Time Cost: 121.85 ± 23.56 steps

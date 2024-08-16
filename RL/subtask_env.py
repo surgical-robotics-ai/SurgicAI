@@ -15,9 +15,7 @@ from surgical_robotics_challenge.simulation_manager import SimulationManager
 from surgical_robotics_challenge.task_completion_report import TaskCompletionReport
 from surgical_robotics_challenge.utils.task3_init import NeedleInitialization
 from surgical_robotics_challenge.evaluation.evaluation import Task_2_Evaluation, Task_2_Evaluation_Report
-from utils.observation import Observation
-from utils.needle_kinematics_v2 import NeedleKinematics_v2
-from evaluation import *
+from utils.needle_kinematics_old import NeedleKinematics_v2
 from surgical_robotics_challenge.kinematics.psmFK import *
 
 
@@ -37,7 +35,7 @@ class SRC_subtask(gym.Env):
 
         # Define action and observation space
         super(SRC_subtask, self).__init__()
-
+        self.random_range = np.array([0.003,0.02,np.pi/6],dtype=np.float32)
         self.max_timestep = max_episode_step
         print(f"max episode length is {self.max_timestep}")
         self.step_size = step_size
@@ -103,6 +101,7 @@ class SRC_subtask(gym.Env):
         self.psm_idx = None
         self.psm_goal_list = [self.psm1_goal,self.psm2_goal]
         self.goal_obs = None
+        
         print("Initialized!!!")
         return
 
@@ -159,12 +158,16 @@ class SRC_subtask(gym.Env):
         else:
             return False
 
-    def Camera_view_reset(self):
+    def Camera_view_reset(self,reset_noise = False):
         rotation = Rotation(-1, 0.0, 0.0,
             0.0, -0.766044, 0.642788,
             0.0, 0.642788, 0.766044)
 
-        vector = Vector(0.0, 0.1463076, 0.187126)
+        if reset_noise:
+            vector = Vector(0.0, 0.1463076, 0.187126)+Vector(np.random.uniform(-0.02,0.02),np.random.uniform(-0.02,0.02),np.random.uniform(-0.02,0.02))
+        else:
+            vector = Vector(0.0, 0.1463076, 0.187126)
+        
         self.ecm_pos_origin = Frame(rotation, vector)
         self.ecm.servo_cp(self.ecm_pos_origin)
 
@@ -296,9 +299,12 @@ class SRC_subtask(gym.Env):
         origin_p = Vector( -0.0207937, 0.0562045, 0.0711726)
         origin_rz = 0.0
 
-        random_x = np.random.uniform(-0.003, 0.003)
-        random_y = np.random.uniform(-0.02, 0.01)
-        random_rz = np.random.uniform(-np.pi/6,np.pi/6)
+        # random_x = np.random.uniform(-0.003, 0.003)
+        # random_y = np.random.uniform(-0.02, 0.01)
+        # random_rz = np.random.uniform(-np.pi/6,np.pi/6)
+        random_x = np.random.uniform(-self.random_range[0],self.random_range[0])
+        random_y = np.random.uniform(-self.random_range[1],self.random_range[1])
+        random_rz = np.random.uniform(-self.random_range[2],self.random_range[2])
 
         origin_p[0] += random_x
         origin_p[1] += random_y
@@ -328,3 +334,7 @@ class SRC_subtask(gym.Env):
         array_goal = np.array([X_goal,Y_goal,Z_goal,roll_goal,pitch_goal,yaw_goal],dtype=np.float32)
         return array_goal
             
+    def update_difficulty(self, difficulty_settings):
+        self.threshold_trans = difficulty_settings['trans_tolerance']
+        self.threshold_angle = difficulty_settings['angle_tolerance']
+        self.random_range = difficulty_settings['random_range']

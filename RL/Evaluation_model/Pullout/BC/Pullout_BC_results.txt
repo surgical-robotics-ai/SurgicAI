@@ -1,0 +1,10 @@
+Task: Pullout
+Algorithm: BC
+Reward Type: /
+Number of seeds: 5
+Evaluation seed: 42
+
+Results:
+Success Rate: 0.92 ± 0.09
+Average Trajectory Length: 49.88 ± 1.74 mm
+Average Time Cost: 95.80 ± 3.60 steps

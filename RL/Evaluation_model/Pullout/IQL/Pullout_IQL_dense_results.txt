@@ -1,0 +1,9 @@
+Task: Pullout
+Algorithm: IQL
+Reward Type: dense
+Evaluation seed: 1
+
+Results:
+Success Rate: 0.95 ± 0.08
+Average Trajectory Length: 44.28 ± 2.34 mm
+Average Time Cost: 95.21 ± 4.31 steps

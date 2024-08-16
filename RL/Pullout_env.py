@@ -4,7 +4,6 @@ import numpy as np
 import time
 
 from PyKDL import Frame, Rotation, Vector
-from evaluation import *
 from surgical_robotics_challenge.kinematics.psmFK import *
 from subtask_env import SRC_subtask
 

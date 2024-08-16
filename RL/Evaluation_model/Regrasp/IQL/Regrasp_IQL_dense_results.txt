@@ -1,0 +1,9 @@
+Task: Regrasp
+Algorithm: IQL
+Reward Type: dense
+Evaluation seed: 1
+
+Results:
+Success Rate: 0.95 ± 0.06
+Average Trajectory Length: 72.21 ± 3.43 mm
+Average Time Cost: 110.34 ± 6.21 steps

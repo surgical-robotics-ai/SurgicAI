@@ -1,0 +1,10 @@
+Task: Regrasp
+Algorithm: TD3_HER_BC
+Reward Type: sparse
+Number of seeds: 5
+Evaluation seed: 42
+
+Results:
+Success Rate: 0.98 ± 0.02
+Average Trajectory Length: 61.61 ± 6.15 mm
+Average Time Cost: 105.00 ± 4.30 steps

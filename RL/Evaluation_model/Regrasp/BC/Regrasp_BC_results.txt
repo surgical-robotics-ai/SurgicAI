@@ -1,0 +1,10 @@
+Task: Regrasp
+Algorithm: BC
+Reward Type: /
+Number of seeds: 5
+Evaluation seed: 42
+
+Results:
+Success Rate: 0.83 ± 0.24
+Average Trajectory Length: 64.65 ± 3.21 mm
+Average Time Cost: 113.60 ± 5.15 steps

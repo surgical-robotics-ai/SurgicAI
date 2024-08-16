@@ -1,0 +1,10 @@
+Task: Insert
+Algorithm: TD3_HER_BC
+Reward Type: sparse
+Number of seeds: 5
+Evaluation seed: 42
+
+Results:
+Success Rate: 0.91 ± 0.07
+Average Trajectory Length: 41.74 ± 2.82 mm
+Average Time Cost: 83.25 ± 3.30 steps

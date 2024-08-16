@@ -5,8 +5,7 @@ from gymnasium import spaces
 import numpy as np
 import time
 from Low_env_init import low_level_controller
-from evaluation import *
-
+from surgical_robotics_challenge.kinematics.psmFK import *
 
 def add_break(s):
     time.sleep(s)
@@ -58,7 +57,6 @@ class SRC_high_level(gym.Env):
         task_idx = action+1
         self.low_env.task_update(task_idx)
 
-        # Completion prior
         while (self.low_env.subtask_completion == 0):
             next_obs_low, _, self.terminate, self.truncate, self.info = self.LLC.low_level_step(self.obs_low)
             self.obs_low = next_obs_low

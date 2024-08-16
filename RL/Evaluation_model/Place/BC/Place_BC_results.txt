@@ -1,0 +1,10 @@
+Task: Place
+Algorithm: BC
+Reward Type: /
+Number of seeds: 5
+Evaluation seed: 42
+
+Results:
+Success Rate: 1.00 ± 0.00
+Average Trajectory Length: 66.35 ± 20.36 mm
+Average Time Cost: 120.87 ± 26.72 steps
