@@ -12,7 +12,6 @@ import re
 import pickle
 import gc
 
-# 命令行参数解析
 parser = argparse.ArgumentParser(description='Behavior Cloning Training')
 parser.add_argument('--task_name', type=str, required=True, help='Name of the task')
 parser.add_argument('--view_name', type=str, required=True, help='Name of the view')

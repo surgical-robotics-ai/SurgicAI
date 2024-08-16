@@ -3,7 +3,7 @@
 ## Prerequiste
 This section introduces the necessary configuration you need.
 ### System Requirement
-![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04-orange?style=flat-square&logo=ubuntu) ![Gymnasium](https://img.shields.io/badge/Gymnasium-0.29.1-blue?style=flat-square&logo=github) ![Stable Baselines3](https://img.shields.io/badge/Stable_Baselines3-2.2.1-green?style=flat-square&logo=python) ![ROS Noetic](https://img.shields.io/badge/ROS-Noetic-blue?style=flat-square&logo=ros) ![Python](https://img.shields.io/badge/Python-3.8-blue?style=flat-square&logo=python) ![Torch](https://img.shields.io/badge/Torch-2.1.0-red?style=flat-square&logo=pytorch) ![ambf](https://img.shields.io/badge/ambf-2.0-yellow?style=flat-square&logo=github)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04-orange?style=flat-square&logo=ubuntu) ![Gymnasium](https://img.shields.io/badge/Gymnasium-0.29.1-blue?style=flat-square&logo=github) ![Stable Baselines3](https://img.shields.io/badge/Stable_Baselines3-2.2.1-green?style=flat-square&logo=python) ![ROS Noetic](https://img.shields.io/badge/ROS-Noetic-blue?style=flat-square&logo=ros) ![Python](https://img.shields.io/badge/Python-3.8-blue?style=flat-square&logo=python) ![Torch](https://img.shields.io/badge/Torch-2.1.0-red?style=flat-square&logo=pytorch) ![ambf](https://img.shields.io/badge/ambf-2.0-yellow?style=flat-square&logo=github) ![d3rlpy](https://img.shields.io/badge/d3rlpy-2.5.0-purple?style=flat-square&logo=python)
 
 ### Installation
 * Install the [surgical robotics challenge environment](https://github.com/surgical-robotics-ai/surgical_robotics_challenge) as well as the AMBF and ROS prerequisites in the link. It provides simulation environment for suturing phantom combined with da Vinci surgical system.

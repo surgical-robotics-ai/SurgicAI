@@ -1,27 +1,16 @@
-# Training environment for approaching stage for (DDPG+HER)
-
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import time
-import re
-
 from PyKDL import Frame, Rotation, Vector
 from gym.spaces.box import Box
 from surgical_robotics_challenge.psm_arm import PSM
 from surgical_robotics_challenge.ecm_arm import ECM
 from surgical_robotics_challenge.scene import Scene
 from surgical_robotics_challenge.simulation_manager import SimulationManager
-from surgical_robotics_challenge.task_completion_report import TaskCompletionReport
-from surgical_robotics_challenge.utils.task3_init import NeedleInitialization
-from surgical_robotics_challenge.evaluation.evaluation import Task_2_Evaluation, Task_2_Evaluation_Report
+from surgical_robotics_challenge.utils.task3_init import NeedleInitialization # Only for old SRC
 from utils.needle_kinematics_old import NeedleKinematics_v2
 from surgical_robotics_challenge.kinematics.psmFK import *
-
-
-def add_break(s):
-    time.sleep(s)
-    # print('-------------')
 
 class SRC_subtask(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -92,11 +81,11 @@ class SRC_subtask(gym.Env):
         self.init_psm1 = np.array([ 0.04629208,0.00752399,-0.08173992,-3.598019,-0.05762508,1.2738742,0.8],dtype=np.float32)
         self.psm1_goal = self.init_psm1
         self.psm_step(self.psm1_goal,1)
-        add_break(0.5)
+        time.sleep(0.5)
         self.init_psm2 = np.array([-0.03721037,  0.01213105, -0.08036895, -2.7039163, 0.07693613, 2.0361109, 0.8],dtype=np.float32)
         self.psm2_goal = self.init_psm2
         self.psm_step(self.psm2_goal,2)
-        add_break(0.5)
+        time.sleep(0.5)
         self.timestep = 0
         self.psm_idx = None
         self.psm_goal_list = [self.psm1_goal,self.psm2_goal]

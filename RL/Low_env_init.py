@@ -3,12 +3,8 @@ from stable_baselines3.common.evaluation import evaluate_policy
 # from EasyEnv import myEasyGym
 from Low_level_env_complete import SRC_low_level
 import numpy as np
-from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.env_checker import check_env
-from stable_baselines3 import HerReplayBuffer, DDPG, PPO, SAC
-from RL_algo.DDPG_BC import DDPG_BC
 from RL_algo.td3_BC import TD3_BC
-from RL_algo.DemoHerReplayBuffer import DemoHerReplayBuffer
 from stable_baselines3.common.utils import set_random_seed
 from gymnasium import spaces
 import time

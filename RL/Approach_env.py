@@ -4,10 +4,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import time
-import re
-
 from PyKDL import Frame, Rotation, Vector
-from evaluation import *
 from surgical_robotics_challenge.kinematics.psmFK import *
 from subtask_env import SRC_subtask
 

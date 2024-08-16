@@ -1,0 +1,10 @@
+Task: Place
+Algorithm: TD3_BC
+Reward Type: sparse
+Number of seeds: 5
+Evaluation seed: 42
+
+Results:
+Success Rate: 0.88 ± 0.08
+Average Trajectory Length: 63.39 ± 15.60 mm
+Average Time Cost: 116.71 ± 32.88 steps
