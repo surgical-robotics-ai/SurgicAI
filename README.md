@@ -106,7 +106,7 @@ python3 Model_evaluation.py --algorithm "$algorithm" --task_name "$task" --rewar
 ```
 
 ### High-level Training
-See in [High_level_HLP.ipynb](./High_level_HLP.ipynb) for more details.
+See in [High_level_HLP.ipynb](./RL/High_level_HLP.ipynb) for more details.
 
 The following video demonstrates the complete suturing procedure by our training policy.
 
