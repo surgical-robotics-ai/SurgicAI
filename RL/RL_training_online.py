@@ -13,10 +13,10 @@ import torch
 
 gc.collect()
 torch.cuda.empty_cache()
-Base_directory = "/home/robo/trajectory_data/RL_new"
+Base_directory = os.path.dirname(os.path.abspath(__file__))
 
 def load_expert_data(task_name):
-    expert_data_path = f"/home/robo/trajectory_data/Five_task_state/{task_name}/all_episodes_merged.pkl"
+    expert_data_path = Base_directory + f"/Expert_traj/{task_name}/all_episodes_merged.pkl"
     try:
         with open(expert_data_path, 'rb') as file:
             return pickle.load(file)

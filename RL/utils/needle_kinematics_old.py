@@ -93,6 +93,18 @@ class NeedleKinematics_v2:
         T_angle = Frame(Rotation.RPY(0., 0., -angle_rad), Vector(-self.Radius*np.cos(angle_rad), self.Radius*np.sin(angle_rad), 0.)/10.0)
         return self._T_nINw * T_angle
 
+    def get_interpolated_transforms(self, start_degree=5, end_degree=25, num_points=25):
+        self.start_degree = start_degree
+        self.end_degree = end_degree    
+        self.num_points = num_points
+        angles = np.linspace(start_degree, end_degree, num_points)
+        transforms = []
+        for angle in angles:
+            angle_rad = np.deg2rad(angle)
+            T_angle = Frame(Rotation.RPY(0., 0., -angle_rad), Vector(-self.Radius*np.cos(angle_rad), self.Radius*np.sin(angle_rad), 0.)/10.0)
+            transforms.append(self._T_nINw * T_angle)
+        return transforms
+    
     def get_random_grasp_point(self,random_degree=None):
         Radius = 0.1018
         min_degree = 10

@@ -107,5 +107,42 @@ class SRC_approach(SRC_subtask):
         self.min_angle = min_angle    
         # print(f"min trans = {min_trans} cm, min_angle = {np.degrees(min_angle)} deg")
         return False
+    
+    def needle_multigoal_evaluator(self, lift_height=0.007, psm_idx=2, start_degree=5, end_degree=30, num_points=25):
+        """
+        Evaluate the multiple allowed goal grasping points.
+        """
+        interpolated_transforms = self.needle_kin.get_interpolated_transforms(start_degree, end_degree, num_points)
+        goals = []
+
+        for transform in interpolated_transforms:
+            grasp_in_World = transform
+
+            lift_in_grasp_rot = Rotation(1, 0, 0,
+                                         0, 1, 0,
+                                         0, 0, 1)
+            lift_in_grasp_trans = Vector(0, 0, lift_height)
+            lift_in_grasp = Frame(lift_in_grasp_rot, lift_in_grasp_trans)
+
+            if psm_idx == 2:
+                gripper_in_lift_rot = Rotation(0, -1, 0,
+                                               -1, 0, 0,
+                                               0, 0, -1)
+            else:
+                gripper_in_lift_rot = Rotation(0, 1, 0,
+                                               1, 0, 0,
+                                               0, 0, -1)
+
+            gripper_in_lift_trans = Vector(0.0, 0.0, 0.0)
+            gripper_in_lift = Frame(gripper_in_lift_rot, gripper_in_lift_trans)
+
+            gripper_in_world = grasp_in_World * lift_in_grasp * gripper_in_lift
+            gripper_in_base = self.psm_list[psm_idx - 1].get_T_w_b() * gripper_in_world
+
+            array_goal_base = self.Frame2Vec(gripper_in_base)
+            array_goal_base = np.append(array_goal_base, 0.0)
+            goals.append(array_goal_base)
+
+        return goals
  
 
