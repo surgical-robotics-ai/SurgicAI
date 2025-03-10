@@ -28,7 +28,7 @@ def get_algorithm_config(algorithm_name: str, env: Any, task_name: str, reward_t
     :param episode_transitions: Expert demonstrations for BC-based algorithms
     :return: Dictionary containing the algorithm class and its parameters
     """
-    base_path = f"/home/robo/trajectory_data/RL_new/{task_name}/{algorithm_name}/{reward_type}/seed_{seed}"
+    base_path = f"learning_data/{task_name}/{algorithm_name}/{reward_type}/seed_{seed}"
     os.makedirs(base_path, exist_ok=True)
     
     base_params = {

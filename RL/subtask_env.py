@@ -103,6 +103,9 @@ class SRC_subtask(gym.Env):
         # action[-1] = 0
         action_step = action*self.step_size
         self.psm_goal_list[self.psm_idx-1] = current+action_step
+        self.jaw1_angle = self.psm_goal_list[0][-1]
+        self.jaw2_angle = self.psm_goal_list[1][-1]
+        self.jaw_angle_list = [self.jaw1_angle, self.jaw2_angle]
         self.world_handle.update()
         self.psm_step(self.psm_goal_list[self.psm_idx-1] ,self.psm_idx)
         self._update_observation(self.psm_goal_list[self.psm_idx-1])
@@ -179,7 +182,6 @@ class SRC_subtask(gym.Env):
         
         return observation_dict
 
-
     def _update_observation(self, current):
         """ Update the observation of the environment
 
@@ -243,7 +245,141 @@ class SRC_subtask(gym.Env):
         self.psm_list[psm_idx-1].move_cp(T_goal,execute_time)
         self.psm_list[psm_idx-1].set_jaw_angle(Jaw_angle)
 
-    def needle_goal_evaluator(self,lift_height=0.010, psm_idx=2, deg_angle = None):
+    def exit_goal_evaluator(self,deg=120,dev=[0,0,0],idx=2, exit_num = 1):
+        
+        if exit_num == 1:
+            exit_in_world = self.scene.exit1_measured_cp()
+        elif exit_num == 2:
+            exit_in_world = self.scene.exit2_measured_cp()
+        elif exit_num == 3:
+            exit_in_world = self.scene.exit3_measured_cp()
+        exit_in_base = self.psm_list[idx-1].get_T_w_b()*exit_in_world
+
+        # entry_pos.Inverse() to obtain the inverse transformation matrix
+        # rotation_matrix = np.array([[0,-1,0],[0,0,1],[-1,0,0]]).astype(np.float32)
+        rotation_matrix = np.array([[-1,0,0],[0,0,1],[0,1,0]]).astype(np.float32)
+        rotation_front_in_exit = Rotation(rotation_matrix[0, 0], rotation_matrix[0, 1], rotation_matrix[0, 2],
+                            rotation_matrix[1, 0], rotation_matrix[1, 1], rotation_matrix[1, 2],
+                            rotation_matrix[2, 0], rotation_matrix[2, 1], rotation_matrix[2, 2])
+        trans_front_in_exit = Vector(dev[0],dev[1],dev[2])
+        front_in_exit = Frame(rotation_front_in_exit,trans_front_in_exit)
+
+        front_in_world = self.needle_kin.get_pose_angle(deg)
+        gripper_in_world = self.psm_list[idx-1].get_T_b_w()*convert_mat_to_frame(self.psm_list[idx-1].measured_cp())
+        gripper_in_front = front_in_world.Inverse()*gripper_in_world
+
+        gripper_in_base = exit_in_base*front_in_exit*gripper_in_front
+        array_insert = self.Frame2Vec(gripper_in_base)
+        array_insert = np.append(array_insert,0.0)
+        return array_insert
+    
+    def handover_goal_evaluator(self,deg=110,dev=[0,0,0],idx=1):
+        exit_in_world = self.scene.exit1_measured_cp()
+        rotation_decrease_y = Rotation.RotY(-np.deg2rad(50))
+        new_rotation = exit_in_world.M * rotation_decrease_y
+        handover_in_world = Frame(new_rotation, Vector(exit_in_world.p[0] + 0.03, exit_in_world.p[1], exit_in_world.p[2] + 0.03))
+        exit_in_base = self.psm_list[idx-1].get_T_w_b()*handover_in_world
+
+        rotation_matrix = np.array([[-1,0,0],[0,0,1],[0,1,0]]).astype(np.float32)
+        rotation_front_in_exit = Rotation(rotation_matrix[0, 0], rotation_matrix[0, 1], rotation_matrix[0, 2],
+                            rotation_matrix[1, 0], rotation_matrix[1, 1], rotation_matrix[1, 2],
+                            rotation_matrix[2, 0], rotation_matrix[2, 1], rotation_matrix[2, 2])
+        trans_front_in_exit = Vector(dev[0],dev[1],dev[2])
+        front_in_exit = Frame(rotation_front_in_exit,trans_front_in_exit)
+
+        front_in_world = self.needle_kin.get_pose_angle(deg)
+        gripper_in_world = self.psm_list[idx-1].get_T_b_w()*convert_mat_to_frame(self.psm_list[idx-1].measured_cp())
+        gripper_in_front = front_in_world.Inverse()*gripper_in_world
+
+        gripper_in_base = exit_in_base*front_in_exit*gripper_in_front
+        array_handover = self.Frame2Vec(gripper_in_base)
+        array_handover = np.append(array_handover,0.0)
+        return array_handover
+
+    def entry_goal_evaluator(self,deg=120,dev_trans=[0,0,0],dev_Yangle = 0.0,idx=2,noise=False):
+        rotation_noise = Rotation.RotY(np.deg2rad(dev_Yangle))
+        translation_noise = Vector(0, 0, 0)
+        noise_in_entry = Frame(rotation_noise, translation_noise)
+
+        entry_in_world = self.scene.entry1_measured_cp()
+        noise_in_world = entry_in_world*noise_in_entry
+        entry_in_base = self.psm_list[idx-1].get_T_w_b()*noise_in_world # entry with angle deviation
+
+        rotation_matrix = np.array([[1,0,0],[0,0,1],[0,-1,0]]).astype(np.float32)
+        rotation_tip_in_entry = Rotation(rotation_matrix[0, 0], rotation_matrix[0, 1], rotation_matrix[0, 2],
+                            rotation_matrix[1, 0], rotation_matrix[1, 1], rotation_matrix[1, 2],
+                            rotation_matrix[2, 0], rotation_matrix[2, 1], rotation_matrix[2, 2])
+        trans_tip_in_entry = Vector(dev_trans[0],dev_trans[1],dev_trans[2])
+        tip_in_entry = Frame(rotation_tip_in_entry,trans_tip_in_entry)
+
+
+        tip_in_world = self.needle_kin.get_pose_angle(deg)
+        gripper_in_world = self.psm_list[idx-1].get_T_b_w()*convert_mat_to_frame(self.psm_list[idx-1].measured_cp())
+        gripper_in_tip = tip_in_world.Inverse()*gripper_in_world
+
+        gripper_in_base = entry_in_base*tip_in_entry*gripper_in_tip
+        array_insert = self.Frame2Vec(gripper_in_base)
+        array_insert = np.append(array_insert,0.0)
+        if noise:
+            ranges = np.array([0.001, 0.001, 0.001, np.deg2rad(5), np.deg2rad(5), np.deg2rad(5), 0])
+            random_noise = np.random.uniform(-ranges, ranges)
+            array_insert += random_noise
+        return array_insert
+    
+    def insert_goal_evaluator(self,deg=120,dev=[0,0,0],idx=2):
+        exit_in_world = self.scene.exit1_measured_cp()
+        exit_in_base = self.psm_list[idx-1].get_T_w_b()*exit_in_world
+
+        # entry_pos.Inverse() to obtain the inverse transformation matrix
+        # rotation_matrix = np.array([[0,-1,0],[0,0,1],[-1,0,0]]).astype(np.float32)
+        rotation_matrix = np.array([[-1,0,0],[0,0,1],[0,1,0]]).astype(np.float32)
+        rotation_front_in_exit = Rotation(rotation_matrix[0, 0], rotation_matrix[0, 1], rotation_matrix[0, 2],
+                            rotation_matrix[1, 0], rotation_matrix[1, 1], rotation_matrix[1, 2],
+                            rotation_matrix[2, 0], rotation_matrix[2, 1], rotation_matrix[2, 2])
+        trans_front_in_exit = Vector(dev[0],dev[1],dev[2])
+        front_in_exit = Frame(rotation_front_in_exit,trans_front_in_exit)
+
+        front_in_world = self.needle_kin.get_pose_angle(deg)
+        gripper_in_world = self.psm_list[idx-1].get_T_b_w()*convert_mat_to_frame(self.psm_list[idx-1].measured_cp())
+        gripper_in_front = front_in_world.Inverse()*gripper_in_world
+
+        gripper_in_base = exit_in_base*front_in_exit*gripper_in_front
+        array_insert = self.Frame2Vec(gripper_in_base)
+        array_insert = np.append(array_insert,0.0)
+        return array_insert
+
+    def needle_random_grasping_evaluator(self,lift_height):
+        self.random_degree = np.random.uniform(5, 20)
+        self.grasping_pos = self.needle_kin.get_random_grasp_point()
+        needle_rot = self.grasping_pos.M
+        needle_trans_lift = Vector(self.grasping_pos.p.x(),self.grasping_pos.p.y(),self.grasping_pos.p.z()+lift_height)
+        needle_goal_lift = Frame(needle_rot, needle_trans_lift)
+
+        T_calibrate = np.array([[-1,0,0,0],[0,-1,0,0],[0,0,1,0],[0,0,0,1]]).astype(np.float32)
+        rotation_matrix = T_calibrate[:3, :3]
+
+        rotation_calibrate = Rotation(rotation_matrix[0, 0], rotation_matrix[0, 1], rotation_matrix[0, 2],
+                            rotation_matrix[1, 0], rotation_matrix[1, 1], rotation_matrix[1, 2],
+                            rotation_matrix[2, 0], rotation_matrix[2, 1], rotation_matrix[2, 2])
+
+        needle_goal_lift.M = needle_goal_lift.M * rotation_calibrate # To be tested
+        
+        psm_goal_lift = self.psm2.get_T_w_b()*needle_goal_lift
+
+        T_goal = np.array([[0,1,0,0],[1,0,0,0],[0,0,-1,0],[0,0,0,1]]).astype(np.float32)
+        rotation_matrix = T_goal[:3, :3]
+
+        rotation = Rotation(rotation_matrix[0, 0], rotation_matrix[0, 1], rotation_matrix[0, 2],
+                            rotation_matrix[1, 0], rotation_matrix[1, 1], rotation_matrix[1, 2],
+                            rotation_matrix[2, 0], rotation_matrix[2, 1], rotation_matrix[2, 2])
+
+        psm_goal_lift.M = psm_goal_lift.M*rotation
+
+        array_goal_base = self.Frame2Vec(psm_goal_lift)
+        array_goal_base = np.append(array_goal_base,0.0)
+        return array_goal_base
+    
+    def needle_goal_evaluator(self,lift_height=0.007, psm_idx=2, deg_angle = None):
         '''
         Evaluate the target goal for needle grasping in Robot frame.
         '''
@@ -281,6 +417,129 @@ class SRC_subtask(gym.Env):
         return array_goal_base
 
 
+    def needle_multigoal_evaluator(self, lift_height=0.007, psm_idx=2, start_degree=5, end_degree=30, num_points=25):
+        """
+        Evaluate the multiple allowed goal grasping points.
+        """
+        interpolated_transforms = self.needle_kin.get_interpolated_transforms(start_degree, end_degree, num_points)
+        goals = []
+
+        for transform in interpolated_transforms:
+            grasp_in_World = transform
+
+            lift_in_grasp_rot = Rotation(1, 0, 0,
+                                         0, 1, 0,
+                                         0, 0, 1)
+            lift_in_grasp_trans = Vector(0, 0, lift_height)
+            lift_in_grasp = Frame(lift_in_grasp_rot, lift_in_grasp_trans)
+
+            if psm_idx == 2:
+                gripper_in_lift_rot = Rotation(0, -1, 0,
+                                               -1, 0, 0,
+                                               0, 0, -1)
+            else:
+                gripper_in_lift_rot = Rotation(0, 1, 0,
+                                               1, 0, 0,
+                                               0, 0, -1)
+
+            gripper_in_lift_trans = Vector(0.0, 0.0, 0.0)
+            gripper_in_lift = Frame(gripper_in_lift_rot, gripper_in_lift_trans)
+
+            gripper_in_world = grasp_in_World * lift_in_grasp * gripper_in_lift
+            gripper_in_base = self.psm_list[psm_idx - 1].get_T_w_b() * gripper_in_world
+
+            array_goal_base = self.Frame2Vec(gripper_in_base)
+            array_goal_base = np.append(array_goal_base, 0.0)
+            goals.append(array_goal_base)
+
+        return goals
+
+    def Frame2Vec(self,goal_frame,bound = True):
+        """
+        Convert Frame variables into vector forms.
+        """
+        X_goal = goal_frame.p.x()
+        Y_goal = goal_frame.p.y()
+        Z_goal = goal_frame.p.z()
+        rot_goal = goal_frame.M
+        roll_goal,pitch_goal,yaw_goal  = rot_goal.GetRPY()
+        if bound:
+            if (roll_goal <= np.deg2rad(-360)):
+                roll_goal += 2*np.pi
+            elif (roll_goal > np.deg2rad(0)):
+                roll_goal -= 2*np.pi
+        array_goal = np.array([X_goal,Y_goal,Z_goal,roll_goal,pitch_goal,yaw_goal],dtype=np.float32)
+        return array_goal
+            
+    def needle_goal_evaluator(self,lift_height=0.010, psm_idx=2, deg_angle = None):
+        '''
+        Evaluate the target goal for needle grasping in Robot frame.
+        '''
+
+        if deg_angle is None:
+            grasp_in_World = self.needle_kin.get_bm_pose()
+
+        else:
+            grasp_in_World = self.needle_kin.get_pose_angle(deg_angle)
+
+        lift_in_grasp_rot = Rotation(1, 0, 0,
+                                    0, 1, 0,
+                                    0, 0, 1)    
+        lift_in_grasp_trans = Vector(0,0,lift_height)
+        lift_in_grasp = Frame(lift_in_grasp_rot,lift_in_grasp_trans)
+
+        if psm_idx == 2:
+            gripper_in_lift_rot = Rotation(0, -1, 0,
+                                            -1, 0, 0,
+                                            0, 0, -1)
+        else:
+            gripper_in_lift_rot = Rotation(0, 1, 0,
+                                            1, 0, 0,
+                                            0, 0, -1)           
+
+        gripper_in_lift_trans = Vector(0.0,0.0,0.0)
+        gripper_in_lift = Frame(gripper_in_lift_rot,gripper_in_lift_trans)
+
+        gripper_in_world = grasp_in_World*lift_in_grasp*gripper_in_lift
+        gripper_in_base = self.psm_list[psm_idx-1].get_T_w_b()*gripper_in_world
+        
+
+        array_goal_base = self.Frame2Vec(gripper_in_base)
+        array_goal_base = np.append(array_goal_base,0.0)
+        return array_goal_base
+
+    def needle_random_grasping_evaluator(self,lift_height):
+        self.random_degree = np.random.uniform(5, 20)
+        self.grasping_pos = self.needle_kin.get_random_grasp_point()
+        needle_rot = self.grasping_pos.M
+        needle_trans_lift = Vector(self.grasping_pos.p.x(),self.grasping_pos.p.y(),self.grasping_pos.p.z()+lift_height)
+        needle_goal_lift = Frame(needle_rot, needle_trans_lift)
+
+        T_calibrate = np.array([[-1,0,0,0],[0,-1,0,0],[0,0,1,0],[0,0,0,1]]).astype(np.float32)
+        rotation_matrix = T_calibrate[:3, :3]
+
+        rotation_calibrate = Rotation(rotation_matrix[0, 0], rotation_matrix[0, 1], rotation_matrix[0, 2],
+                            rotation_matrix[1, 0], rotation_matrix[1, 1], rotation_matrix[1, 2],
+                            rotation_matrix[2, 0], rotation_matrix[2, 1], rotation_matrix[2, 2])
+
+        needle_goal_lift.M = needle_goal_lift.M * rotation_calibrate # To be tested
+        
+        psm_goal_lift = self.psm2.get_T_w_b()*needle_goal_lift
+
+        T_goal = np.array([[0,1,0,0],[1,0,0,0],[0,0,-1,0],[0,0,0,1]]).astype(np.float32)
+        rotation_matrix = T_goal[:3, :3]
+
+        rotation = Rotation(rotation_matrix[0, 0], rotation_matrix[0, 1], rotation_matrix[0, 2],
+                            rotation_matrix[1, 0], rotation_matrix[1, 1], rotation_matrix[1, 2],
+                            rotation_matrix[2, 0], rotation_matrix[2, 1], rotation_matrix[2, 2])
+
+        psm_goal_lift.M = psm_goal_lift.M*rotation
+
+        array_goal_base = self.Frame2Vec(psm_goal_lift)
+        array_goal_base = np.append(array_goal_base,0.0)
+        return array_goal_base
+
+
     def needle_randomization(self):
         """
         Initializa needle at random positions in the world
@@ -305,23 +564,6 @@ class SRC_subtask(gym.Env):
         
         needle_pos_new = Frame(new_rot,origin_p)
         self.needle.needle.set_pose(needle_pos_new)
-    
-    def Frame2Vec(self,goal_frame,bound = True):
-        """
-        Convert Frame variables into vector forms.
-        """
-        X_goal = goal_frame.p.x()
-        Y_goal = goal_frame.p.y()
-        Z_goal = goal_frame.p.z()
-        rot_goal = goal_frame.M
-        roll_goal,pitch_goal,yaw_goal  = rot_goal.GetRPY()
-        if bound:
-            if (roll_goal <= np.deg2rad(-360)):
-                roll_goal += 2*np.pi
-            elif (roll_goal > np.deg2rad(0)):
-                roll_goal -= 2*np.pi
-        array_goal = np.array([X_goal,Y_goal,Z_goal,roll_goal,pitch_goal,yaw_goal],dtype=np.float32)
-        return array_goal
             
     def update_difficulty(self, difficulty_settings):
         self.threshold_trans = difficulty_settings['trans_tolerance']

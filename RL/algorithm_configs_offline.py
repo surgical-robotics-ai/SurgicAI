@@ -21,7 +21,7 @@ def get_algorithm_config(algorithm_name: str, env, task_name: str, reward_type: 
     :param use_gpu: Whether to use GPU
     :return: Instantiated algorithm
     """
-    base_path = f"/home/robo/trajectory_data/RL_new/{task_name}/{algorithm_name}/{reward_type}/seed_{seed}"
+    base_path = f"learning_data/{task_name}/{algorithm_name}/{reward_type}/seed_{seed}"
     os.makedirs(base_path, exist_ok=True)
 
     # Define custom encoder factory for actor
